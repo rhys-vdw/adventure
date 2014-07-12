@@ -102,41 +102,57 @@ angular.module('adventure-services', []).factory('map', function(Position) {
   };
 }).service('processInput', function(player) {
   return function(input) {
-    switch (input.trim().toLowerCase()) {
-      case 'n':
-      case 'north':
-        return {
-          type: 'move',
-          direction: 'north',
-          destination: player.position.north()
-        };
-      case 's':
-      case 'south':
-        return {
-          type: 'move',
-          direction: 'south',
-          destination: player.position.south()
-        };
-      case 'e':
-      case 'east':
-        return {
-          type: 'move',
-          direction: 'east',
-          destination: player.position.east()
-        };
-      case 'w':
-      case 'west':
-        return {
-          type: 'move',
-          direction: 'west',
-          destination: player.position.west()
-        };
-      default:
-        return {
-          error: true,
-          message: "Did not understand '" + input + "'"
-        };
+    var command, tokens;
+    tokens = input.trim().toLowerCase().split(/\s/);
+    command = (function() {
+      switch (tokens[0]) {
+        case 'n':
+        case 'north':
+          return {
+            type: 'move',
+            direction: 'north',
+            destination: player.position.north()
+          };
+        case 's':
+        case 'south':
+          return {
+            type: 'move',
+            direction: 'south',
+            destination: player.position.south()
+          };
+        case 'e':
+        case 'east':
+          return {
+            type: 'move',
+            direction: 'east',
+            destination: player.position.east()
+          };
+        case 'w':
+        case 'west':
+          return {
+            type: 'move',
+            direction: 'west',
+            destination: player.position.west()
+          };
+        default:
+          return void 0;
+      }
+    })();
+    if (command != null) {
+      return command;
     }
+    if (_.contains(['look', 'inspect'], tokens[0])) {
+      command = {
+        type: 'inspect',
+        object: _.last(_.tail(tokens))
+      };
+    } else {
+      command = {
+        error: true,
+        message: "Did not understand '" + input + "'"
+      };
+    }
+    return command;
   };
 });
 
@@ -149,7 +165,7 @@ angular.module('adventure-main', ['ngRoute', 'adventure-services']).config(funct
   return {
     area: world.area(player.position),
     userAction: function(inputText) {
-      var command;
+      var command, object;
       command = processInput(inputText);
       if (command.error) {
         this.error = command.message;
@@ -163,6 +179,14 @@ angular.module('adventure-main', ['ngRoute', 'adventure-services']).config(funct
           console.dir(this.area);
           return player.position = command.destination;
         case 'inspect':
+          if (command.object != null) {
+            object = _.find(this.area.items, {
+              name: command.object
+            });
+            return this.status = (object != null ? object.description : void 0) || ("Can't see " + command.object);
+          } else {
+            return this.status = 'Inspect what?';
+          }
           break;
         default:
           throw new Error('Unknown command type');

@@ -24,6 +24,10 @@ angular.module 'adventure-main', ['ngRoute', 'adventure-services']
           console.dir @area
           player.position = command.destination
         when 'inspect'
-          
+          if command.object?
+            object = _.find @area.items, name: command.object
+            @status = object?.description or "Can't see #{ command.object }"
+          else
+            @status = 'Inspect what?'
         else throw new Error 'Unknown command type'
 

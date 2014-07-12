@@ -63,7 +63,8 @@ angular.module 'adventure-services', []
 
   .service 'processInput', (player) ->
     (input) ->
-      switch input.trim().toLowerCase()
+      tokens = input.trim().toLowerCase().split /\s/
+      command = switch tokens[0]
         when 'n', 'north'
           type: 'move'
           direction: 'north'
@@ -81,5 +82,17 @@ angular.module 'adventure-services', []
           direction: 'west'
           destination: player.position.west()
         else
+          undefined
+
+      return command if command?
+
+      if _.contains ['look', 'inspect'], tokens[0]
+        command =
+          type: 'inspect'
+          object: _.last _.tail tokens
+      else
+        command =
           error: true
           message: "Did not understand '#{ input }'"
+
+      return command
