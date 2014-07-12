@@ -22,10 +22,13 @@ angular.module 'adventure-main', ['ngRoute', 'adventure-services']
 
         switch command.type
           when 'move'
-            @area = world.area command.destination
-            @status = "You walk #{ command.direction }"
-            console.dir @area
-            player.position = command.destination
+            if @area.hasExit command.direction
+              @area = world.area command.destination
+              @status = "You walk #{ command.direction }"
+              console.dir @area
+              player.position = command.destination
+            else
+              @status = "Cannot go #{ command.direction }"
           when 'inspect'
             if command.object?
               object = _.find @area.items, compare command.object

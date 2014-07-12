@@ -11,7 +11,7 @@ angular.module 'adventure-services', []
         exits: 's'
 
     return {
-      area: (x, y) ->
+      areaConfig: (x, y) ->
         position = new Position x, y
         return model[position.toString()]
     }
@@ -33,19 +33,29 @@ angular.module 'adventure-services', []
   .factory 'world', (map, itemFactory, Position) ->
     model = {}
 
-    initialize = (position) ->
-      areaConfig = _.clone map.area position
-      if areaConfig
-        key = position.toString()
-        area = _.pick areaConfig, 'description', 'exits'
-        area.items = _.map areaConfig.spawnItems, itemFactory.spawn
-        model[key] = area
+    class Area
+      constructor: (config) ->
+        _.extend @, _.pick config, 'description', 'exits'
+        @items = _.map config.spawnItems, itemFactory.spawn
+
+      hasExit: (direction) ->
+        _.contains @exits, _.first direction
 
     return {
       area: (x, y) ->
+
+        # Get lookup key from position.
         position = new Position x, y
         key = position.toString()
-        area = model[key] or initialize position
+
+        # Find area.
+        area = model[key]
+
+        # If it doesn't exist, create it.
+        if ! area?
+          config = map.areaConfig position
+          area = model[key] = new Area config if config?
+
         return area
     }
 
