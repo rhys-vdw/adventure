@@ -4,7 +4,7 @@ angular.module 'adventure-services', []
     model =
       '[0,0]':
         description: 'A perfectly featureless room. There is a door to the north.'
-        spawnItems: ['chair']
+        spawnItems: ['chair', 'arden']
         exits: 'n'
       '[0,1]':
         description: 'A corridor'
@@ -20,6 +20,10 @@ angular.module 'adventure-services', []
       'chair':
         name: 'chair'
         description: 'A chair for sitting'
+        fixed: true
+      'arden':
+        name: 'Arden'
+        description: 'A nerd'
         fixed: true
 
     return {
