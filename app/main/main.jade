@@ -1,0 +1,11 @@
+div(class="description" ng-bind="ctrl.area.description")
+div(class="area-items" ng-show="ctrl.area.items.length > 0")
+  p
+    | There are some things here:
+  ul
+    li(ng-repeat="item in ctrl.area.items"){{ item.name }}
+div(class="status" ng-bind="ctrl.status")
+
+form(ng-submit="ctrl.userAction(inputText)")
+  input(type="text" ng-model="inputText")
+  div(ng-bind="ctrl.error")
