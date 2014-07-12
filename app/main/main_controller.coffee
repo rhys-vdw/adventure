@@ -21,7 +21,7 @@ angular.module 'adventure-main', ['ngRoute', 'adventure-services']
         @error = ''
 
         switch command.type
-          when 'move'
+          when 'go'
             if @area.hasExit command.direction
               @area = world.area command.destination
               @status = "You walk #{ command.direction }"

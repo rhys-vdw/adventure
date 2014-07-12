@@ -128,7 +128,7 @@ angular.module 'adventure-services', []
         direction = _(tokens).find(type: 'direction')?.word
         if direction?
           return {
-            type: 'move'
+            type: 'go'
             direction: direction
             destination: player.position[direction]()
           }
