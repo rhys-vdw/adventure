@@ -11,6 +11,7 @@ angular.module 'adventure-main', ['ngRoute', 'adventure-services']
     return {
       area: world.area player.position
       userAction: (inputText) ->
+        return if _.isEmpty inputText.trim()
         command = processInput inputText
 
         if command.error
