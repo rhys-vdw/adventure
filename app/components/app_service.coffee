@@ -7,7 +7,8 @@ angular.module 'adventure-services', []
         spawnItems: ['chair', 'arden']
         exits: 'n'
       '[0,1]':
-        description: 'A corridor'
+        description: 'A corridor. There is a door at the south end leading back to the room.'
+        exits: 's'
 
     return {
       area: (x, y) ->
@@ -20,11 +21,10 @@ angular.module 'adventure-services', []
       'chair':
         name: 'chair'
         description: 'A chair for sitting'
-        fixed: true
+        actions: ['sit']
       'arden':
         name: 'Arden'
         description: 'A nerd'
-        fixed: true
 
     return {
       spawn: (item) -> _.clone model[item]
@@ -65,38 +65,73 @@ angular.module 'adventure-services', []
   .factory 'player', (Position) ->
     position: new Position 0, 0
 
-  .service 'processInput', (player) ->
+  .factory 'words', () ->
+    verbs = [
+      ['sit', 'rest']
+      ['inspect', 'look']
+      ['move', 'push', 'slide']
+      ['go', 'walk']
+    ]
+
+    prepositions = [
+      ['to']
+      ['from']
+      ['with', 'at', 'on']
+    ]
+
+    directions = [
+      ['north', 'n']
+      ['south', 's']
+      ['east', 'e']
+      ['west', 'w']
+    ]
+
+    # Find the group that contains the given word, and return its first
+    # element.
+    check = (category, word) ->
+      _.first(_(category)
+        .find (group) -> _(group).contains word
+      )
+
+    return {
+      identify: (word) ->
+        if verb = check verbs, word
+          return type: 'verb', word: verb
+
+        if preposition = check prepositions, word
+          return type: 'preposition', word: preposition
+
+        if direction = check directions, word
+          return type: 'direction', word: direction
+
+        return type: 'other', word: word
+    }
+
+  .service 'processInput', (player, words) ->
     (input) ->
-      tokens = input.trim().toLowerCase().split /\s/
-      command = switch tokens[0]
-        when 'n', 'north'
-          type: 'move'
-          direction: 'north'
-          destination: player.position.north()
-        when 's', 'south'
-          type: 'move'
-          direction: 'south'
-          destination: player.position.south()
-        when 'e', 'east'
-          type: 'move'
-          direction: 'east'
-          destination: player.position.east()
-        when 'w', 'west'
-          type: 'move'
-          direction: 'west'
-          destination: player.position.west()
-        else
-          undefined
+      rawTokens = input.trim().toLowerCase().split /\s/
+      tokens = _.map rawTokens, words.identify
 
-      return command if command?
+      verb = _(tokens).find(type: 'verb')?.word
 
-      if _.contains ['look', 'inspect'], tokens[0]
-        command =
+      if ! verb? or verb == 'go'
+        direction = _(tokens).find(type: 'direction')?.word
+        if direction?
+          return {
+            type: 'move'
+            direction: direction
+            destination: player.position[direction]()
+          }
+
+      if verb == 'inspect'
+        return {
           type: 'inspect'
-          object: _.last _.tail tokens
-      else
-        command =
-          error: true
-          message: "Did not understand '#{ input }'"
+          object: _(tokens).find(type: 'other')?.word
+        }
+
+      return {
+        error: true
+        message: "Did not understand '#{ input }'"
+      }
 
       return command
