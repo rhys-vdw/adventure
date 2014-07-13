@@ -16,7 +16,7 @@ angular.module 'adventure-services', []
         return model[position.toString()]
     }
 
-  .factory 'itemFactory', () ->
+  .factory 'items', () ->
     model =
       'chair':
         name: 'chair'
@@ -28,15 +28,16 @@ angular.module 'adventure-services', []
 
     return {
       spawn: (item) -> _.clone model[item]
+      names: -> _.map model, 'name'
     }
 
-  .factory 'world', (map, itemFactory, Position) ->
+  .factory 'world', (map, items, Position) ->
     model = {}
 
     class Area
       constructor: (config) ->
         _.extend @, _.pick config, 'description', 'exits'
-        @items = _.map config.spawnItems, itemFactory.spawn
+        @items = _.map config.spawnItems, items.spawn
 
       hasExit: (direction) ->
         _.contains @exits, _.first direction
@@ -75,7 +76,7 @@ angular.module 'adventure-services', []
   .factory 'player', (Position) ->
     position: new Position 0, 0
 
-  .factory 'words', () ->
+  .factory 'words', (items) ->
     verbs = [
       ['sit', 'rest']
       ['inspect', 'look']
@@ -86,8 +87,10 @@ angular.module 'adventure-services', []
     prepositions = [
       ['to']
       ['from']
-      ['with', 'at', 'on']
+      ['with', 'at', 'on', 'in']
     ]
+
+    items = items.names()
 
     directions = [
       ['north', 'n']
@@ -114,6 +117,11 @@ angular.module 'adventure-services', []
         if direction = check directions, word
           return type: 'direction', word: direction
 
+        console.log "finding #{ word } in ", items
+        if _.contains items, word
+          console.log "got it!"
+          return type: 'item', word: word
+
         return type: 'other', word: word
     }
 
@@ -122,21 +130,24 @@ angular.module 'adventure-services', []
       rawTokens = input.trim().toLowerCase().split /\s/
       tokens = _.map rawTokens, words.identify
 
+      console.log "tokens", tokens
+
       verb = _(tokens).find(type: 'verb')?.word
 
+      # Special case for movement.
       if ! verb? or verb == 'go'
-        direction = _(tokens).find(type: 'direction')?.word
-        if direction?
+        if direction = _(tokens).find(type: 'direction')?.word
           return {
             type: 'go'
             direction: direction
             destination: player.position[direction]()
           }
 
-      if verb == 'inspect'
+      # All other verbs assume an object.
+      if verb?
         return {
-          type: 'inspect'
-          object: _(tokens).find(type: 'other')?.word
+          type: verb
+          object: _(tokens).find(type: 'item')?.word
         }
 
       return {
